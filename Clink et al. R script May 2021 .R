@@ -32,6 +32,16 @@ all.mfcc.combined <- read.csv('all.mfcc.combined.UPDATED.csv')
 combined.codas.all.sites <- read.csv('combined.codas.all.sites.csv')
 male.coda.gps <- read.csv('male.coda.gps.csv')
 
+all.mfcc.combined$site <- substr(all.mfcc.combined$group,start=1,stop=2)
+
+all.mfcc.combined <- transform(all.mfcc.combined,
+                                   site=revalue(site,c("VJ"="SA",
+                                                       "SC"="SA",
+                                                       "SF"="SA",
+                                                       "SM"="SA",
+                                                       "CH"="SA")))
+
+
 # Part 0. Test for differences between playbacks and no playbacks ------------------------------------
 
 # First subset so that only have males from the SAFE site
@@ -55,19 +65,22 @@ SafeMalesOnly$Playback <- as.factor(SafeMalesOnly$Playback)
 SafeMalesOnly.playback <- e1071::svm(SafeMalesOnly[,c(3:22)], 
                                      SafeMalesOnly$Playback, 
                                      kernel = "radial", 
-                                     cross = 25)
+                                     cross = nrow(SafeMalesOnly))
 
 # Check total accuracy
 SafeMalesOnly.playback$tot.accuracy
 
 # Now we remove spontaneous males from our full dataset
 combined.codas.all.sites <- combined.codas.all.sites[!(combined.codas.all.sites$individual %in% NoPlaybacks),]
+combined.codas.all.sites <- subset(combined.codas.all.sites,individual!="VJRNGG2.1")
 nrow(combined.codas.all.sites)
 
 all.mfcc.combined <- all.mfcc.combined[!(all.mfcc.combined$group %in% NoPlaybacks),]
+all.mfcc.combined <- subset(all.mfcc.combined,group!="ICGG14")
 nrow(all.mfcc.combined)
-tail(all.mfcc.combined)
 
+
+unique(all.mfcc.combined$group)
 unique(all.mfcc.combined$group)[ unique(all.mfcc.combined$group) %nin% unique(combined.codas.all.sites$individual)  ]
 unique(combined.codas.all.sites$individual)[ unique(combined.codas.all.sites$individual) %nin% unique(all.mfcc.combined$group)  ]
 mfcc.unique.calls <- unique(all.mfcc.combined$X1)
@@ -76,10 +89,10 @@ features.unique.calls <- unique(combined.codas.all.sites$call.id)
 CallstoRemove <- c(mfcc.unique.calls[mfcc.unique.calls %nin% features.unique.calls],
 features.unique.calls[features.unique.calls %nin% mfcc.unique.calls])
 
-combined.codas.all.sites <- combined.codas.all.sites[!(combined.codas.all.sites$call.id %in% CallstoRemove),]
+combined.codas.all.sites <- droplevels(combined.codas.all.sites[!(combined.codas.all.sites$call.id %in% CallstoRemove),])
 nrow(combined.codas.all.sites)
 
-all.mfcc.combined <- all.mfcc.combined[!(all.mfcc.combined$group %in% NoPlaybacks),]
+all.mfcc.combined <- droplevels(all.mfcc.combined[!(all.mfcc.combined$X1 %in% CallstoRemove),])
 nrow(all.mfcc.combined)
 
 
